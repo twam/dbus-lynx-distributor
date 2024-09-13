@@ -1,0 +1,5 @@
+#!/bin/sh
+echo "*** starting dbus-lynx-distributor ***"
+exec 2>&1
+cd /data/dbus-lynx-distributor
+exec python -m dbus_lynx_distributor -c config.ini -v
