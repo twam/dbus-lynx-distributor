@@ -9,6 +9,15 @@ chmod 744 $SCRIPT_DIR/uninstall.sh
 chmod 755 $SCRIPT_DIR/service/run
 chmod 755 $SCRIPT_DIR/service/log/run
 
+mount -o remount,rw /
+
+pip3 --version
+if [ $? -gt 0 ]
+then
+    opkg update && \
+    opkg install python3-pip
+fi
+
 # check dependencies
 python -c "import usb"
 if [ $? -gt 0 ]
@@ -16,8 +25,11 @@ then
     pip3 install pyusb
 fi
 
+mount -o remount,ro /
+
 # create sym-link to run script in deamon
-ln -s $SCRIPT_DIR/service /opt/victronenergy/service/$SERVICE_NAME
+#ln -s $SCRIPT_DIR/service /opt/victronenergy/service/$SERVICE_NAME
+ln -s $SCRIPT_DIR/service /service/$SERVICE_NAME
 
 # add install-script to rc.local to be ready for firmware update
 filename=/data/rc.local
