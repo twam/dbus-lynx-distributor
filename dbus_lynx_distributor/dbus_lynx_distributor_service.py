@@ -80,7 +80,7 @@ class DbusLynxDistributorService:
         return self._config.getboolean(f'ftdi:{self._ftdi.serial_number}', option, fallback=fallback)
 
     def _update(self):
-        sleep(5)
+        sleep(1)
         try:
             for lynx in range(3, -1, -1):
                 distributor = chr(ord('A') + lynx)
