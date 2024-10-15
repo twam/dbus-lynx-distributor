@@ -1,3 +1,4 @@
+from time import sleep
 from gi.repository import GLib
 from vedbus import VeDbusService
 from dbus import SystemBus
@@ -64,12 +65,7 @@ class DbusLynxDistributorService:
                 self._dbusservice.add_path(f'/Distributor/{distributor}/Fuse/{fuse}/Alarms/Blown', None)  # <= 0=Ok, 2=Alarm
 
         self._dbusservice.register()
-
-        self._ftdi.reset()
-        self._ftdi.disable_special_characters()
-        self._ftdi.set_bit_mode(mpsse=True)
         self._ftdi.init_i2c()
-        self._ftdi.set_i2c_lines_idle()
 
         self._update()
         GLib.timeout_add(1000, self._update)
@@ -84,19 +80,19 @@ class DbusLynxDistributorService:
         return self._config.getboolean(f'ftdi:{self._ftdi.serial_number}', option, fallback=fallback)
 
     def _update(self):
+        sleep(5)
         try:
-            for lynx in range(4):
+            for lynx in range(3, -1, -1):
                 distributor = chr(ord('A') + lynx)
                 address = 0x08 + lynx
 
-                self._ftdi.set_i2c_start()
                 available = self._ftdi.send_addr_and_check_ack(address)
 
                 if not available:
                     self._dbusservice[f'/Distributor/{distributor}/Status'] = 3 if self._config_getboolean(f'distributor{distributor}Installed', False) else 0
                     self._dbusservice[f'/Distributor/{distributor}/Alarms/ConnectionLost'] = 2 if self._config_getboolean(f'distributor{distributor}Installed', False) else 0
                 else:
-                    state = self._ftdi.read_byte_and_send_nak()
+                    state = self._ftdi.read_byte_and_send_nak(address)
 
                     no_bus_power = (state & 0b00000010)
 
@@ -121,8 +117,6 @@ class DbusLynxDistributorService:
                                 else:
                                     self._dbusservice[f'/Distributor/{distributor}/Fuse/{fuse}/Status'] = 2
                                     self._dbusservice[f'/Distributor/{distributor}/Fuse/{fuse}/Alarms/Blown'] = 0
-
-                self._ftdi.set_i2c_stop()
 
         except USBError:
             print("USB communication failed")
