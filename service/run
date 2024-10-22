@@ -2,4 +2,28 @@
 echo "*** starting dbus-lynx-distributor ***"
 exec 2>&1
 cd /data/dbus-lynx-distributor
+# Function to check if a Python library is installed
+function is_library_installed() {
+    python3 -m pip show "$1" 2>/dev/null > /dev/null
+    if [ $? -eq 0 ]; then
+        echo "Library '$1' is already installed."
+    else
+        echo "Library '$1' is not installed."
+    fi
+}
+
+function install_library() {
+    if ! is_library_installed "$1"; then
+        python3 -m pip install "$1"
+        if [ $? -eq 0 ]; then
+            echo "Library '$1' installed successfully."
+        else
+            echo "Error installing library '$1'."
+        fi
+    fi
+}
+
+install_library pyftdi
+install_library pyusb
+
 exec python -m dbus_lynx_distributor -c config.ini -v

@@ -25,6 +25,12 @@ then
     pip3 install pyusb
 fi
 
+python -c "import pyftdi"
+if [ $? -gt 0 ]
+then
+    pip3 install pyftdi
+fi
+
 mount -o remount,ro /
 
 # create sym-link to run script in deamon
