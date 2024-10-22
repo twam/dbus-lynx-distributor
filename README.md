@@ -41,7 +41,7 @@ Any reads on the device will always return the same status byte with the followi
 
 If multiple fuses are open multiple bits are set (just or the values).
 
-### Adapter
+### Adapters
 
 As [Cerbo GX](https://www.victronenergy.de/communication-centres/cerbo-gx) doesn't provide any I²C interfaces an adapter is needed. I choose the [C232HM-EDHSL-0](https://ftdichip.com/products/c232hm-edhsl-0/) from FTDI as it is 'premade' available. I personally used the 3.3V variant ([C232HM-DDHSL-0](https://ftdichip.com/products/c232hm-ddhsl-0/)) which provides less than the according to the manual required 5V, but it works on my device.
 
@@ -58,6 +58,15 @@ As Venus OS supports those FTDI's chip by default it would the Linux kernel's US
 The VID 0x0403 / PID 0xD4F8 I used is out of a PID block I got from FTDI in 2005. Feel free to re-use on your adapter/board as well. 
 
 Besides the VID/PID I changed the Manufacturer to 'twam.info', the Product Description to 'I2C Master' , Port A's Hardware to 245 FIFO and Port A's Driver to D2XX Direct. All those should be optional.
+
+#### FTDI's C232HM-DxDHSL-0
+
+See above.
+
+#### Adafruit FT232H Breakout
+
+Adafruit offers a [FT232H Breakout](https://www.adafruit.com/product/2264), which also works fine. I used the 3.3V supply (and not the 5V) as with the 5V the Lynx Distributors didn't answer I2C requests. The breakout always pull SCL/SDA to only 3.3V which might be not enough for the Lynx Distributor if running at 5V.
+
 
 ## Software
 
