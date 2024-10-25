@@ -35,8 +35,11 @@ class Ftdi:
         self.i2c = i2c
        
     def read_byte_and_send_nak(self, address: int):
-        port = self.i2c.get_port(address)
-        data_read = port.read(1)
+        try:
+            port = self.i2c.get_port(address)
+            data_read = port.read(1)
+        except I2cNackError:
+            return None
         if len(data_read) == 0:
             return None
         return data_read[0]
