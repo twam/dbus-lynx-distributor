@@ -59,20 +59,16 @@ class DbusLynxDistributorService:
             self._dbusservice.add_path(f'/Distributor/{distributor}/Status', None) # <= 0=Not available, 1=Connected, 2=No bus power, 3=Communications Lost
             self._dbusservice.add_path(f'/Distributor/{distributor}/Alarms/ConnectionLost', None) # <= 0=Ok, 2=Alarm
             for fuse in range(4):
-                self._dbusservice.add_path(f'/Distributor/{distributor}/Fuse/{fuse}/Name', self._config_get(f'distributor{distributor}Fuse{fuse}Name', None)) # <= UTF-8 string, limited to 16 bytes in firmware
-                self._dbusservice.add_path(f'/Distributor/{distributor}/Fuse/{fuse}/Status', None) # <= 0=Not available, 1=Not used, 2=Ok, 3=Blown
-                self._dbusservice.add_path(f'/Distributor/{distributor}/Fuse/{fuse}/Alarms/Blown', None)  # <= 0=Ok, 2=Alarm
+                fuse_index = 3 - fuse if self._config_getboolean('mounted_upside_down', False) else fuse
+                self._dbusservice.add_path(f'/Distributor/{distributor}/Fuse/{fuse_index}/Name', self._config_get(f'distributor{distributor}Fuse{fuse}Name', None)) # <= UTF-8 string, limited to 16 bytes in firmware
+                self._dbusservice.add_path(f'/Distributor/{distributor}/Fuse/{fuse_index}/Status', None) # <= 0=Not available, 1=Not used, 2=Ok, 3=Blown
+                self._dbusservice.add_path(f'/Distributor/{distributor}/Fuse/{fuse_index}/Alarms/Blown', None)  # <= 0=Ok, 2=Alarm
 
         self._dbusservice.register()
-
-        self._ftdi.reset()
-        self._ftdi.disable_special_characters()
-        self._ftdi.set_bit_mode(mpsse=True)
         self._ftdi.init_i2c()
-        self._ftdi.set_i2c_lines_idle()
 
         self._update()
-        GLib.timeout_add(1000, self._update)
+        GLib.timeout_add(2000, self._update)
 
     def __del__(self):
         print('Good Bye')
@@ -89,14 +85,13 @@ class DbusLynxDistributorService:
                 distributor = chr(ord('A') + lynx)
                 address = 0x08 + lynx
 
-                self._ftdi.set_i2c_start()
                 available = self._ftdi.send_addr_and_check_ack(address)
 
                 if not available:
                     self._dbusservice[f'/Distributor/{distributor}/Status'] = 3 if self._config_getboolean(f'distributor{distributor}Installed', False) else 0
                     self._dbusservice[f'/Distributor/{distributor}/Alarms/ConnectionLost'] = 2 if self._config_getboolean(f'distributor{distributor}Installed', False) else 0
                 else:
-                    state = self._ftdi.read_byte_and_send_nak()
+                    state = self._ftdi.read_byte_and_send_nak(address)
 
                     no_bus_power = (state & 0b00000010)
 
@@ -104,25 +99,24 @@ class DbusLynxDistributorService:
                     self._dbusservice[f'/Distributor/{distributor}/Alarms/ConnectionLost'] = 0
 
                     for fuse in range(4):
+                        fuse_index = 3 - fuse if self._config_getboolean('mounted_upside_down', False) else fuse
                         fuse_installed = self._config_getboolean(f'distributor{distributor}Fuse{fuse}Installed', True)
                         fuse_blown = (state & (0b00010000 << fuse))
 
                         if fuse_installed is False:
-                            self._dbusservice[f'/Distributor/{distributor}/Fuse/{fuse}/Status'] = 1
-                            self._dbusservice[f'/Distributor/{distributor}/Fuse/{fuse}/Alarms/Blown'] = 0
+                            self._dbusservice[f'/Distributor/{distributor}/Fuse/{fuse_index}/Status'] = 1
+                            self._dbusservice[f'/Distributor/{distributor}/Fuse/{fuse_index}/Alarms/Blown'] = 0
                         else:
                             if no_bus_power:
-                                self._dbusservice[f'/Distributor/{distributor}/Fuse/{fuse}/Status'] = 0
-                                self._dbusservice[f'/Distributor/{distributor}/Fuse/{fuse}/Alarms/Blown'] = 0
+                                self._dbusservice[f'/Distributor/{distributor}/Fuse/{fuse_index}/Status'] = 0
+                                self._dbusservice[f'/Distributor/{distributor}/Fuse/{fuse_index}/Alarms/Blown'] = 0
                             else:
                                 if fuse_blown:
-                                    self._dbusservice[f'/Distributor/{distributor}/Fuse/{fuse}/Status'] = 3
-                                    self._dbusservice[f'/Distributor/{distributor}/Fuse/{fuse}/Alarms/Blown'] = 2
+                                    self._dbusservice[f'/Distributor/{distributor}/Fuse/{fuse_index}/Status'] = 3
+                                    self._dbusservice[f'/Distributor/{distributor}/Fuse/{fuse_index}/Alarms/Blown'] = 2
                                 else:
-                                    self._dbusservice[f'/Distributor/{distributor}/Fuse/{fuse}/Status'] = 2
-                                    self._dbusservice[f'/Distributor/{distributor}/Fuse/{fuse}/Alarms/Blown'] = 0
-
-                self._ftdi.set_i2c_stop()
+                                    self._dbusservice[f'/Distributor/{distributor}/Fuse/{fuse_index}/Status'] = 2
+                                    self._dbusservice[f'/Distributor/{distributor}/Fuse/{fuse_index}/Alarms/Blown'] = 0
 
         except USBError:
             print("USB communication failed")
