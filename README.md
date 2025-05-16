@@ -76,7 +76,11 @@ Therefore I re-implemented the the required drivers parts in Python just using `
 
 ### Installation
 
-Download into `/data/dbus-lynx-distributor` on your Venus device (e.g. Cerbo GX) and run `install.sh`
+Download into `/data/dbus-lynx-distributor` on your Venus device (e.g. Cerbo GX) and run `install.sh`.
+
+If you clone the git repository, don't forget to also clone the submodules. Either by a recursive clone (`git clone --recursive …`) or an explicit submodule update (`git submodule update --init`).
+
+You might also need to install the `python3-modules` package by `mount -o remount,rw / && opkg install python3-modules && mount -o remount,ro /`.
 
 ### Configuration
 
